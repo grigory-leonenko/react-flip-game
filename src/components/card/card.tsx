@@ -13,7 +13,6 @@ import styles from './card.module.css';
 import userEvent from '@testing-library/user-event';
 interface IProps {
   card: ICard,
-  index: number,
 }
 
 const faces: any = {
@@ -23,17 +22,16 @@ const faces: any = {
   heart,
 }
 
-export const Card: FC<IProps> = ({ card, index }) => {
-  const { selected, selectCard } = useEngine();
+export const Card: FC<IProps> = ({ card }) => {
   const wrapperRef = useRef() as any; // TODO Fix incorrect type checking.
-  const [flip, setFlip] = useState(false);
+  const { selected, startMatch, finishMatch } = useEngine();
+  const isSelected = selected.includes(card);
 
   const handleTransitionEnd = useCallback(() => {
-    if (selected) {
-      selectCard(card, index);
-      setFlip(false);
+    if (isSelected) {
+      finishMatch(card);
     }
-  }, [flip, selected]);
+  }, [isSelected, finishMatch]);
 
   useEffect(() => {
     wrapperRef.current.addEventListener('transitionend', handleTransitionEnd);
@@ -45,8 +43,8 @@ export const Card: FC<IProps> = ({ card, index }) => {
   }, [handleTransitionEnd, wrapperRef]);
 
   const handleClickCard = useCallback(() => {
-    setFlip(true);
-  }, [flip]);
+    startMatch(card)
+  }, [startMatch]);
 
   const animations = {
     hidden: { opacity: 0 },
@@ -62,8 +60,6 @@ export const Card: FC<IProps> = ({ card, index }) => {
     }
   }
 
-  const isFlipped = flip || card === selected?.card;
-
   return (
     <motion.div
       className={styles.wrapper}
@@ -71,7 +67,7 @@ export const Card: FC<IProps> = ({ card, index }) => {
       initial="hidden"
       animate="visible"
       exit="hidden"
-      custom={isFlipped}
+      custom={isSelected}
       variants={animations}
       transition={transition}
       onClick={handleClickCard}

@@ -1,14 +1,20 @@
 import React, { useState, useCallback, useContext, useRef, FC } from 'react';
-import { ICard, IStack, ISelected, IEngine } from './interfaces';
+import { SCENES, IStats, ICard, IStack, ISelected, IEngine } from './interfaces';
 
 const VALUES = ['A','K','Q','J','10','9','8','7','6'];
 const SYMBOLS = ['diamond', 'spade', 'clover', 'heart'];
 
 const Context = React.createContext<IEngine>({
+  scene: SCENES.start,
   stack: [],
-  selected: null,
+  stats: {
+    timer: 0,
+    moves: 0,
+  },
+  selected: [],
   startGame: () => {},
-  selectCard: () => {},
+  startMatch: () => {},
+  finishMatch: () => {},
 });
 
 const cards = VALUES.reduce<ICard[]>((result, value) => {
@@ -33,48 +39,88 @@ export const useEngine = () => {
 
 export const EngineProvider: FC = ({ children }) => {
   const matched = useRef(0);
+  const timer = useRef<any>(); // TODO Fix typechecking for interval.
   const [stack, setStack] = useState<IStack>([]);
-  const [selected, setSelected] = useState<ISelected | null>(null);
+  const [selected, setSelected] = useState<ISelected>([]);
+  const [scene, setScene] = useState<SCENES>(SCENES.start);
+  const [stats, setStats] = useState<IStats>({
+    timer: 0,
+    moves: 0,
+  });
 
-  const updateStack = useCallback((currentIndex, nextIndex) => {
-    const updated = [...stack];
-    updated[currentIndex] = null;
-    updated[nextIndex] = null;
-    console.log(updated);
-    setStack(updated);
-  }, [stack]);
-
-  const checkStack = useCallback(() => {
+  const checkGame = () => {
     matched.current++;
     if ((stack.length / 2) === matched.current) {
-      console.log('finish game');
+      clearInterval(timer.current);
+      setScene(SCENES.finish);
     }
-  }, [stack]);
+  };
 
-  const selectCard = useCallback((card, index) => {
-      if (selected) {
-        if (selected.card.value === card.value) {
-          updateStack(selected.index, index);
-          checkStack();
-        }
-        setSelected(null);
-      } else {
-        setSelected({ card, index });
-      }
+  const checkMatch = () => {
+    const [ left, right ] = selected;
+    if (left?.value === right?.value) {
+      const updated = stack.map(item => {
+        return item === left || item === right ? null : item;
+      });
+      checkGame();
+      setStack(updated);
+    }
+    setStats(current => ({
+      ...current,
+      moves: current.moves + 1,    
+    }));
+  };
+
+  const updateTimer = useCallback(() => {
+    setStats(current => ({
+      ...current,
+      timer: current.timer + 1,
+    }));
+  }, []);
+
+  const startMatch = useCallback((card) => {
+    // Do nothing for second click on selected card
+    if (selected.includes(card)) {
+      return;
+    }
+    // Check match and reset selected if third card clicked
+    if (selected.length === 2) {
+      checkMatch();
+      setSelected([ card ]);
+    } else {
+      setSelected([ ...selected, card ]);
+    }
+  }, [selected]);
+
+  const finishMatch = useCallback((card) => {
+    // Check match only if two cards ready for match
+    if (selected[1] === card) {
+      checkMatch();
+      setSelected([]);
+    }
   }, [selected]);
 
   const startGame = useCallback(() => {
+    setScene(SCENES.play);
     setStack(getCards());
-    setSelected(null);
+    setSelected([]);
+    setStats({
+      timer: 0,
+      moves: 0,
+    });
+    timer.current = setInterval(updateTimer, 1000);
   }, []);;
 
   return (
     <Context.Provider 
       value={{
         stack,
+        scene,
+        stats,
         selected,
         startGame,
-        selectCard,
+        startMatch,
+        finishMatch,
       }}
     >
       {children}
