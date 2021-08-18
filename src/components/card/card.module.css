@@ -1,19 +1,12 @@
 .wrapper {
-  width: 132px;
-  height: 132px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   width: 100%;
   height: 100%;
-  background: white;
   border-radius: 8px;
+  box-shadow: 0px 0px 4px 0px rgba(68, 81, 92, 0.4);
+  cursor: pointer;
+  transition: transform ease-in 0.8s;
+  transform-style: preserve-3d;
 }
 
 .value {
@@ -26,4 +19,27 @@
   margin-top: 12px;
   width: 32px;
   height: 32px;
+}
+
+.front, .back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+}
+
+.front {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: white;
+  transform: rotateY(180deg);
+}
+
+.back {
+  border-radius: 8px;
+  background-color: #ffffff;
+  background: repeating-linear-gradient( 45deg, #2a9d8f, #2a9d8f 5px, #fff 5px, #fff 25px );
 }

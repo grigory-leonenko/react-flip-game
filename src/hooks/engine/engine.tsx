@@ -1,25 +1,12 @@
 import React, { useState, useCallback, useContext, useRef, FC } from 'react';
+import { ICard, IStack, ISelected, IEngine } from './interfaces';
 
 const VALUES = ['A','K','Q','J','10','9','8','7','6'];
 const SYMBOLS = ['diamond', 'spade', 'clover', 'heart'];
 
-export interface ICard {
-  value: string,
-  symbol: string,
-}
-export type IStack = (ICard | null)[]
-export interface ISelected {
-  card: ICard,
-  index: number,
-}
-export interface IEngine {
-  stack: IStack,
-  startGame: () => void,
-  selectCard: (card: ICard, index: number) => void,
-}
-
 const Context = React.createContext<IEngine>({
   stack: [],
+  selected: null,
   startGame: () => {},
   selectCard: () => {},
 });
@@ -53,10 +40,11 @@ export const EngineProvider: FC = ({ children }) => {
     const updated = [...stack];
     updated[currentIndex] = null;
     updated[nextIndex] = null;
+    console.log(updated);
     setStack(updated);
   }, [stack]);
 
-  const checkState = useCallback(() => {
+  const checkStack = useCallback(() => {
     matched.current++;
     if ((stack.length / 2) === matched.current) {
       console.log('finish game');
@@ -67,7 +55,7 @@ export const EngineProvider: FC = ({ children }) => {
       if (selected) {
         if (selected.card.value === card.value) {
           updateStack(selected.index, index);
-          checkState();
+          checkStack();
         }
         setSelected(null);
       } else {
@@ -78,12 +66,13 @@ export const EngineProvider: FC = ({ children }) => {
   const startGame = useCallback(() => {
     setStack(getCards());
     setSelected(null);
-  }, []);
+  }, []);;
 
   return (
     <Context.Provider 
       value={{
         stack,
+        selected,
         startGame,
         selectCard,
       }}
